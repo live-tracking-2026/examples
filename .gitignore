@@ -1,0 +1,7 @@
+.env
+.env.*
+*.pem
+
+# Local ops / deployment (keep copies outside the repo or use env overrides)
+Caddy
+sync.sh

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cap programmatic demo</title>
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0 }
+      :root {
+        font-family: system-ui, sans-serif;
+        font-size: 15px;
+        line-height: 1.5;
+        color: #1a1a1a;
+        background: #f1f3f7;
+      }
+      body { display: flex; flex-direction: column; min-height: 100vh }
+      nav {
+        background: #fff;
+        border-bottom: 1px solid #e5e7eb;
+        padding: 0 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+      nav .brand { font-weight: 700; color: #6366f1; padding: 0.9rem 0 }
+      nav a {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #6b7280;
+        text-decoration: none;
+      }
+      nav a:hover { color: #1a1a1a }
+      nav .badge {
+        margin-left: auto;
+        font-size: 0.75rem;
+        font-weight: 500;
+        background: #fefce8;
+        color: #a16207;
+        border: 1px solid #fef08a;
+        border-radius: 20px;
+        padding: 0.2rem 0.6rem;
+      }
+      nav .badge.blocked { background: #fff1f2; color: #be123c; border-color: #fecdd3 }
+      nav .badge.pending { background: #fefce8; color: #a16207; border-color: #fef08a }
+      main {
+        flex: 1;
+        max-width: 960px;
+        width: 100%;
+        margin: 2rem auto;
+        padding: 0 1.25rem;
+        display: grid;
+        grid-template-columns: 1fr 300px;
+        gap: 1.25rem;
+        align-items: start;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 1.25rem 1.5rem;
+      }
+      .login-header { margin-bottom: 1.25rem; text-align: center }
+      .login-header .logo {
+        width: 40px; height: 40px; background: #6366f1; border-radius: 10px;
+        margin: 0 auto 0.75rem; display: flex; align-items: center; justify-content: center;
+        font-size: 1.2rem;
+      }
+      .login-header h1 { font-size: 1.15rem; font-weight: 700; color: #111827 }
+      .login-header p { font-size: 0.82rem; color: #6b7280; margin-top: 0.2rem }
+      .form-field { margin-bottom: 1rem }
+      .form-field label {
+        display: block; font-size: 0.8rem; font-weight: 500; color: #374151; margin-bottom: 0.35rem;
+      }
+      .form-field input {
+        width: 100%; padding: 0.55rem 0.75rem; border: 1px solid #d1d5db; border-radius: 7px;
+        font: inherit; font-size: 0.875rem; outline: none;
+      }
+      .form-field input:focus {
+        border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, .15);
+      }
+      .btn-submit {
+        width: 100%; padding: 0.65rem 1rem; background: #6366f1; color: #fff; border: none;
+        border-radius: 7px; font: inherit; font-size: 0.875rem; font-weight: 600; cursor: pointer;
+      }
+      .btn-submit:disabled { opacity: 0.5; cursor: not-allowed }
+      .btn-grid { display: flex; flex-wrap: wrap; gap: 0.5rem }
+      button {
+        font: inherit; font-size: 0.8rem; font-weight: 500; padding: 0.4rem 0.85rem;
+        border-radius: 6px; border: 1px solid #d1d5db; background: #fff; cursor: pointer;
+      }
+      button:hover { background: #f3f4f6 }
+      .status-banner {
+        margin-bottom: 1rem; padding: 0.55rem 0.75rem; border-radius: 7px;
+        font-size: 0.8rem; font-weight: 500; display: none;
+      }
+      .status-banner.info    { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; display: block }
+      .status-banner.success { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; display: block }
+      .status-banner.error   { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; display: block }
+      .config-row { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; align-items: flex-end }
+      .config-row .config-field { flex: 1 }
+      .config-row label { display: block; font-size: 0.72rem; font-weight: 500; color: #6b7280; margin-bottom: 0.2rem }
+      .config-row input {
+        width: 100%; padding: 0.35rem 0.55rem; border: 1px solid #d1d5db; border-radius: 5px;
+        font: inherit; font-size: 0.78rem;
+      }
+      .config-row button {
+        font-weight: 600; padding: 0.35rem 0.75rem; background: #6366f1; color: #fff; border: none;
+      }
+      .hint { font-size: 0.72rem; color: #9ca3af; margin-bottom: 0.75rem; line-height: 1.4 }
+      .prog-progress-wrap {
+        margin: 1rem 0; background: #f3f4f6; border-radius: 6px; height: 8px; overflow: hidden;
+      }
+      .prog-progress-bar {
+        height: 100%; width: 0%; background: linear-gradient(90deg, #6366f1, #818cf8);
+        transition: width .12s ease;
+      }
+      .prog-progress-meta {
+        display: flex; justify-content: space-between; font-size: 0.72rem; color: #6b7280; margin-top: 0.35rem;
+      }
+      .code-sample {
+        font-family: monospace; font-size: 0.72rem; line-height: 1.45;
+        background: #111827; color: #e5e7eb; border-radius: 8px; padding: 0.85rem 1rem;
+        margin: 0.75rem 0 1rem; overflow-x: auto; white-space: pre;
+      }
+      .token-preview {
+        font-family: monospace; font-size: 0.72rem; color: #6b7280;
+        background: #f3f4f6; padding: 0.35rem 0.5rem; border-radius: 4px; word-break: break-all;
+      }
+      #prog-log {
+        max-height: 420px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.3rem;
+        font-size: 0.75rem; font-family: monospace;
+      }
+      .log-entry {
+        background: #f9fafb; border: 1px solid #e5e7eb; border-left: 3px solid #6366f1;
+        border-radius: 4px; padding: 0.3rem 0.5rem; word-break: break-all;
+      }
+      .log-entry.success { border-left-color: #10b981 }
+      .log-entry.error   { border-left-color: #f43f5e }
+      .log-entry.warn    { border-left-color: #f59e0b }
+      .log-entry.info    { border-left-color: #6366f1 }
+      .log-time { color: #9ca3af; margin-right: 0.4rem }
+      .log-label { font-weight: 700; margin-right: 0.35rem }
+      .login-success {
+        text-align: center;
+        padding: 1.5rem 1rem 1.25rem;
+        margin-bottom: 1rem;
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-radius: 10px;
+      }
+      .login-success[hidden] { display: none !important }
+      #prog-login-workspace[hidden] { display: none !important }
+      .login-success-icon {
+        width: 48px; height: 48px; margin: 0 auto 0.75rem;
+        background: #10b981; color: #fff; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.4rem; font-weight: 700;
+      }
+      .login-success-message {
+        font-size: 1.05rem; font-weight: 700; color: #15803d; margin-bottom: 0.35rem;
+      }
+      .login-success-email { font-size: 0.82rem; color: #166534; margin-bottom: 1rem }
+      .login-success-api {
+        font-family: monospace; font-size: 0.7rem; color: #6b7280;
+        background: #fff; border: 1px solid #d1fae5; border-radius: 6px;
+        padding: 0.5rem 0.65rem; margin-bottom: 1rem; word-break: break-all; text-align: left;
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@cap.js/widget"></script>
+  </head>
+  <body>
+    <nav>
+      <span class="brand">Cap programmatic</span>
+      <a href="/">← Analytics demo</a>
+      <a href="/login">Widget login</a>
+      <span id="nav-status" class="badge pending">⏳ Starting solve…</span>
+    </nav>
+
+    <main>
+      <div class="card">
+        <div class="login-header">
+          <div class="logo" id="prog-header-logo">⚙️</div>
+          <h1 id="prog-header-title">Programmatic Cap</h1>
+          <p id="prog-header-desc"><code>cap.solve()</code> runs automatically on page load</p>
+        </div>
+
+        <div id="prog-login-success" class="login-success" hidden>
+          <div class="login-success-icon" aria-hidden="true">✓</div>
+          <p id="prog-login-success-message" class="login-success-message"></p>
+          <p id="prog-login-success-email" class="login-success-email"></p>
+          <pre id="prog-login-success-json" class="login-success-api"></pre>
+          <button type="button" onclick="clearProgLoginSuccess()">Sign in again</button>
+        </div>
+
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:0.85rem 1rem;margin-bottom:1.25rem">
+          <h2 style="margin-bottom:0.6rem;font-size:0.78rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#9ca3af">Cap configuration</h2>
+          <div class="config-row">
+            <div class="config-field">
+              <label>Cap API URL</label>
+              <input id="prog-cfg-base-url" type="text" value="" placeholder="https://your-cap-host" />
+            </div>
+            <div class="config-field">
+              <label>Site Key</label>
+              <input id="prog-cfg-site-key" type="text" value="" placeholder="your-site-key-here" />
+            </div>
+            <button type="button" onclick="applyProgConfig()">Apply &amp; re-solve</button>
+          </div>
+          <p class="hint">
+            <a href="https://trycap.dev/guide/programmatic" target="_blank" rel="noopener">Programmatic guide</a>
+            — endpoint must end with <code>/</code>.
+          </p>
+        </div>
+
+        <div id="prog-login-workspace">
+          <pre class="code-sample">const cap = new Cap({ apiEndpoint, workers });
+cap.addEventListener('progress', …);
+const { token } = await cap.solve(); // auto on load</pre>
+
+          <div id="prog-status-banner" class="status-banner info">Loading Cap and solving challenge…</div>
+
+          <div class="prog-progress-wrap">
+            <div id="prog-progress-bar" class="prog-progress-bar"></div>
+          </div>
+          <div class="prog-progress-meta">
+            <span>PoW progress</span>
+            <span id="prog-progress-label">Starting…</span>
+          </div>
+
+          <p class="hint" style="margin:1rem 0">
+            Token: <span id="prog-token-preview" class="token-preview">—</span>
+          </p>
+
+          <div class="btn-grid" style="margin-bottom:1rem">
+            <button type="button" onclick="resetProgrammatic()">Reset &amp; re-solve</button>
+          </div>
+
+          <form id="prog-login-form" onsubmit="handleProgSubmit(event)" novalidate>
+            <div class="form-field">
+              <label for="prog-email">Email</label>
+              <input id="prog-email" type="email" value="alice@example.com" autocomplete="email" />
+            </div>
+            <div class="form-field">
+              <label for="prog-password">Password</label>
+              <input id="prog-password" type="password" value="hunter2" autocomplete="current-password" />
+            </div>
+            <button type="submit" class="btn-submit" id="prog-submit-btn" disabled>Sign in with token</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="card" style="position:sticky;top:1.5rem">
+        <h2 style="display:flex;justify-content:space-between;font-size:0.8rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#9ca3af;margin-bottom:1rem">
+          Programmatic log
+          <button style="font-size:0.7rem;padding:0.2rem 0.5rem" onclick="clearProgLog()">clear</button>
+        </h2>
+        <div id="prog-log">
+          <div class="log-entry" style="color:#9ca3af">Initializing…</div>
+        </div>
+      </div>
+    </main>
+
+    <script src="login-programmatic.js"></script>
+  </body>
+</html>

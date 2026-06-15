@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Analytics demo</title>
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0 }
+      :root {
+        font-family: system-ui, sans-serif;
+        font-size: 15px;
+        line-height: 1.5;
+        color: #1a1a1a;
+        background: #f1f3f7;
+      }
+
+      /* ── layout ──────────────────────────────────── */
+      body { display: flex; flex-direction: column; min-height: 100vh }
+
+      nav {
+        background: #fff;
+        border-bottom: 1px solid #e5e7eb;
+        padding: 0 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0;
+      }
+      nav .brand {
+        font-weight: 700;
+        font-size: 1rem;
+        color: #6366f1;
+        margin-right: 2rem;
+        padding: 0.9rem 0;
+      }
+      nav a {
+        display: inline-block;
+        padding: 0.9rem 0.85rem;
+        text-decoration: none;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #6b7280;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        transition: color .15s, border-color .15s;
+      }
+      nav a:hover { color: #1a1a1a }
+      nav a.active { color: #6366f1; border-bottom-color: #6366f1 }
+
+      main {
+        flex: 1;
+        max-width: 900px;
+        width: 100%;
+        margin: 2rem auto;
+        padding: 0 1.25rem;
+        display: grid;
+        grid-template-columns: 1fr 300px;
+        gap: 1.25rem;
+        align-items: start;
+      }
+
+      /* ── cards ───────────────────────────────────── */
+      .card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 1.25rem 1.5rem;
+      }
+      .card h2 {
+        font-size: 0.8rem;
+        font-weight: 600;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        color: #9ca3af;
+        margin-bottom: 1rem;
+      }
+
+      /* ── buttons ─────────────────────────────────── */
+      .btn-grid { display: flex; flex-wrap: wrap; gap: 0.5rem }
+      button {
+        font: inherit;
+        font-size: 0.8rem;
+        font-weight: 500;
+        padding: 0.4rem 0.85rem;
+        border-radius: 6px;
+        border: 1px solid #d1d5db;
+        background: #fff;
+        color: #374151;
+        cursor: pointer;
+        transition: background .12s, border-color .12s;
+      }
+      button:hover { background: #f3f4f6 }
+      button.primary { background: #6366f1; color: #fff; border-color: #6366f1 }
+      button.primary:hover { background: #4f46e5 }
+      button.green  { background: #10b981; color: #fff; border-color: #10b981 }
+      button.green:hover  { background: #059669 }
+      button.amber  { background: #f59e0b; color: #fff; border-color: #f59e0b }
+      button.amber:hover  { background: #d97706 }
+      button.rose   { background: #f43f5e; color: #fff; border-color: #f43f5e }
+      button.rose:hover   { background: #e11d48 }
+
+      /* ── section groups ──────────────────────────── */
+      .section-group { display: flex; flex-direction: column; gap: 1.25rem }
+
+      /* ── utm pills ───────────────────────────────── */
+      .utm-grid { display: flex; flex-direction: column; gap: 0.4rem }
+      .utm-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.78rem;
+      }
+      .utm-row button { min-width: 70px }
+      .utm-tag {
+        font-family: monospace;
+        font-size: 0.72rem;
+        color: #6b7280;
+        background: #f3f4f6;
+        padding: 0.15rem 0.4rem;
+        border-radius: 4px;
+      }
+
+      /* ── event log ───────────────────────────────── */
+      #log, #login-log {
+        max-height: 420px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+        font-size: 0.75rem;
+        font-family: monospace;
+      }
+      .log-entry {
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-left: 3px solid #6366f1;
+        border-radius: 4px;
+        padding: 0.3rem 0.5rem;
+        word-break: break-all;
+        animation: fade-in .2s ease;
+      }
+      .log-entry.pageview { border-left-color: #10b981 }
+      .log-entry.error    { border-left-color: #f43f5e }
+      @keyframes fade-in { from { opacity: 0; transform: translateY(-4px) } }
+      .log-time { color: #9ca3af; margin-right: 0.4rem }
+
+      .page-content { padding: 0.25rem 0 0.5rem }
+      .page-content p { font-size: 0.875rem; color: #4b5563; margin-top: 0.4rem }
+
+      nav .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        background: #f0fdf4;
+        color: #15803d;
+        border: 1px solid #bbf7d0;
+        border-radius: 20px;
+        padding: 0.2rem 0.6rem;
+        margin-left: auto;
+      }
+      nav .badge.blocked { background: #fff1f2; color: #be123c; border-color: #fecdd3 }
+      nav .badge.pending { background: #fefce8; color: #a16207; border-color: #fef08a }
+
+      .page-panel[hidden] { display: none !important }
+
+      /* ── login tab ───────────────────────────────── */
+      .login-header { margin-bottom: 1.25rem; text-align: center }
+      .login-header .logo {
+        width: 40px; height: 40px; background: #6366f1; border-radius: 10px;
+        margin: 0 auto 0.75rem; display: flex; align-items: center; justify-content: center;
+        font-size: 1.2rem;
+      }
+      .login-header h1 { font-size: 1.15rem; font-weight: 700; color: #111827 }
+      .login-header p { font-size: 0.82rem; color: #6b7280; margin-top: 0.2rem }
+      .form-field { margin-bottom: 1rem }
+      .form-field label {
+        display: block; font-size: 0.8rem; font-weight: 500; color: #374151; margin-bottom: 0.35rem;
+      }
+      .form-field input {
+        width: 100%; padding: 0.55rem 0.75rem; border: 1px solid #d1d5db; border-radius: 7px;
+        font: inherit; font-size: 0.875rem; color: #111827; outline: none;
+        transition: border-color .15s, box-shadow .15s;
+      }
+      .form-field input:focus {
+        border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, .15);
+      }
+      .cap-wrapper { margin: 1.1rem 0; display: flex; align-items: stretch }
+      .cap-frame {
+        flex: 1; border: 1px solid #d1d5db; border-radius: 7px; padding: 0.6rem 0.75rem;
+        display: flex; align-items: center; justify-content: space-between; background: #fafafa; min-height: 56px;
+      }
+      .cap-frame cap-widget { --cap-primary: #6366f1 }
+      .cap-branding {
+        display: flex; flex-direction: column; align-items: center;
+        font-size: 0.6rem; color: #9ca3af; gap: 0.15rem;
+      }
+      .cap-branding .cap-logo { font-size: 1.1rem; line-height: 1 }
+      .cap-branding a { color: #9ca3af; text-decoration: none; font-weight: 500 }
+      .cap-branding a:hover { color: #6366f1 }
+      .btn-submit {
+        width: 100%; padding: 0.65rem 1rem; background: #6366f1; color: #fff; border: none;
+        border-radius: 7px; font: inherit; font-size: 0.875rem; font-weight: 600; cursor: pointer;
+        transition: background .15s, opacity .15s;
+      }
+      .btn-submit:hover:not(:disabled) { background: #4f46e5 }
+      .btn-submit:disabled { opacity: 0.5; cursor: not-allowed }
+      .divider {
+        display: flex; align-items: center; gap: 0.75rem; margin: 1.1rem 0;
+        font-size: 0.75rem; color: #d1d5db;
+      }
+      .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: #e5e7eb }
+      .status-banner {
+        margin-bottom: 1rem; padding: 0.55rem 0.75rem; border-radius: 7px;
+        font-size: 0.8rem; font-weight: 500; display: none;
+      }
+      .status-banner.info    { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; display: block }
+      .status-banner.success { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; display: block }
+      .status-banner.error   { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; display: block }
+      .config-row { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; align-items: flex-end }
+      .config-row .config-field { flex: 1 }
+      .config-row label {
+        display: block; font-size: 0.72rem; font-weight: 500; color: #6b7280; margin-bottom: 0.2rem;
+      }
+      .config-row input {
+        width: 100%; padding: 0.35rem 0.55rem; border: 1px solid #d1d5db; border-radius: 5px;
+        font: inherit; font-size: 0.78rem; color: #111827; outline: none;
+      }
+      .config-row input:focus { border-color: #6366f1 }
+      .config-row button {
+        font: inherit; font-size: 0.78rem; font-weight: 600; padding: 0.35rem 0.75rem;
+        background: #6366f1; color: #fff; border: none; border-radius: 5px; cursor: pointer; white-space: nowrap;
+      }
+      .config-row button:hover { background: #4f46e5 }
+      .hint { font-size: 0.72rem; color: #9ca3af; margin-bottom: 0.75rem; line-height: 1.4 }
+      #login-log .log-entry.warn { border-left-color: #f59e0b }
+      #login-log .log-entry.info { border-left-color: #6366f1 }
+      #login-log .log-label { font-weight: 700; margin-right: 0.35rem }
+    </style>
+
+    <!-- Cap widget (login tab) -->
+    <script src="https://cdn.jsdelivr.net/npm/@cap.js/widget"></script>
+
+    <!-- Optional analytics: add your snippet here (data-site-id, data-api-host, src). -->
+  </head>
+
+  <body>
+
+    <!-- ── Nav (SPA pages) ─────────────────────────── -->
+    <nav>
+      <span class="brand">Acme&nbsp;Inc.</span>
+      <a href="/" class="nav-link active" data-path="/">Home</a>
+      <a href="/about" class="nav-link" data-path="/about">About</a>
+      <a href="/blog" class="nav-link" data-path="/blog">Blog</a>
+      <a href="/pricing" class="nav-link" data-path="/pricing">Pricing</a>
+      <a href="/contact" class="nav-link" data-path="/contact">Contact</a>
+      <a href="/login" class="nav-link" data-path="/login">Login with Verification box</a>
+      <a href="/cap-programmatic.html">Login with RECAPTCHA style</a>
+      <span id="nav-status" class="badge pending" hidden>⏳ Awaiting verification</span>
+    </nav>
+
+    <main>
+      <div class="section-group">
+
+        <!-- Login (Cap + POST /api/login) -->
+        <div id="panel-login" class="page-panel" data-panel="login" hidden>
+          <div class="card">
+            <div class="login-header">
+              <div class="logo">🔐</div>
+              <h1>Sign in to Acme</h1>
+              <p>Bot protection powered by <strong>Cap</strong></p>
+            </div>
+
+            <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:0.85rem 1rem;margin-bottom:1.25rem">
+              <h2 style="margin-bottom:0.6rem;font-size:0.78rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#9ca3af">Cap configuration</h2>
+              <div class="config-row">
+                <div class="config-field">
+                  <label>Cap API URL</label>
+                  <input id="cfg-base-url" type="text" value="" placeholder="https://your-cap-host" />
+                </div>
+                <div class="config-field">
+                  <label>Site Key</label>
+                  <input id="cfg-site-key" type="text" value="" placeholder="your-site-key-here" />
+                </div>
+                <button type="button" onclick="applyConfig()">Apply</button>
+              </div>
+              <p class="hint">
+                Widget calls <code>/{site-key}/challenge</code> + <code>/redeem</code>.
+                Submit posts to <code>POST /api/login</code> on the Go server, which calls
+                <code>/siteverify</code> with <code>CAP_SECRET</code> server-side.
+              </p>
+            </div>
+
+            <div id="status-banner" class="status-banner"></div>
+
+            <form id="login-form" onsubmit="handleSubmit(event)" novalidate>
+              <div class="form-field">
+                <label for="email">Email</label>
+                <input id="email" type="email" placeholder="you@example.com" autocomplete="email" value="alice@example.com" />
+              </div>
+              <div class="form-field">
+                <label for="password">Password</label>
+                <input id="password" type="password" placeholder="••••••••" autocomplete="current-password" value="hunter2" />
+              </div>
+              <div class="cap-wrapper">
+                <div class="cap-frame">
+                  <cap-widget
+                    id="cap"
+                    data-cap-api-endpoint=""
+                  ></cap-widget>
+                  <div class="cap-branding">
+                    <span class="cap-logo">🛡</span>
+                    <span>Protected by</span>
+                    <a href="https://capjs.org" target="_blank" rel="noopener">Cap</a>
+                  </div>
+                </div>
+              </div>
+              <button type="submit" class="btn-submit" id="submit-btn" disabled>Sign in</button>
+            </form>
+
+            <div class="divider">or</div>
+            <button type="button" onclick="resetWidget()" style="width:100%;padding:0.55rem;border:1px solid #e5e7eb;background:#fff;border-radius:7px;font:inherit;font-size:0.82rem;color:#6b7280;cursor:pointer">
+              Reset widget (simulate new challenge)
+            </button>
+          </div>
+        </div>
+
+        <div id="panel-demo" class="page-panel" data-panel="demo">
+
+        <!-- Page content placeholder -->
+        <div class="card">
+          <h2>Current page</h2>
+          <div class="page-content">
+            <strong id="page-title">🏠 Home</strong>
+            <p id="page-desc">Click a nav link above to simulate SPA navigation.
+              The snippet fires a pageview automatically on each route change.</p>
+          </div>
+        </div>
+
+        <!-- UTM sources -->
+        <div class="card">
+          <h2>UTM traffic sources</h2>
+          <div class="utm-grid">
+            <div class="utm-row">
+              <button onclick="applyUTM('google','cpc','spring_sale','ad_banner')">Visit</button>
+              <span class="utm-tag">utm_source=google &amp; utm_medium=cpc &amp; utm_campaign=spring_sale</span>
+            </div>
+            <div class="utm-row">
+              <button onclick="applyUTM('twitter','social','launch','tweet_1')">Visit</button>
+              <span class="utm-tag">utm_source=twitter &amp; utm_medium=social &amp; utm_campaign=launch</span>
+            </div>
+            <div class="utm-row">
+              <button onclick="applyUTM('newsletter','email','weekly','header_cta')">Visit</button>
+              <span class="utm-tag">utm_source=newsletter &amp; utm_medium=email &amp; utm_campaign=weekly</span>
+            </div>
+            <div class="utm-row">
+              <button onclick="applyUTM('github','referral','readme')">Visit</button>
+              <span class="utm-tag">utm_source=github &amp; utm_medium=referral</span>
+            </div>
+            <div class="utm-row">
+              <button onclick="clearUTM()">Direct (no UTM)</button>
+              <span class="utm-tag">— no query params</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- rrweb: type in a field to emit text_input (masked) interaction events -->
+        <div class="card">
+          <h2>Keyboard / text input (rrweb)</h2>
+          <p style="font-size:0.8rem;color:#6b7280;margin-bottom:0.75rem">
+            rrweb records <strong>field input</strong> as <code>text_input</code> increments (content masked), not every global keydown.
+            Click below and type — check collect payloads for <code>interaction_event</code> with <code>source: text_input</code>.
+          </p>
+          <label style="display:block;font-size:0.78rem;color:#4b5563;margin-bottom:0.35rem">Single-line</label>
+          <input type="text" id="demo-text-input" placeholder="Type here…" autocomplete="off"
+            style="width:100%;padding:0.5rem 0.65rem;border:1px solid #d1d5db;border-radius:6px;font:inherit;margin-bottom:0.75rem" />
+          <label style="display:block;font-size:0.78rem;color:#4b5563;margin-bottom:0.35rem">Multi-line</label>
+          <textarea id="demo-textarea" rows="3" placeholder="Type multiple lines…"
+            style="width:100%;padding:0.5rem 0.65rem;border:1px solid #d1d5db;border-radius:6px;font:inherit;resize:vertical"></textarea>
+        </div>
+
+        <!-- Custom events -->
+        <div class="card">
+          <h2>Custom events</h2>
+          <div class="btn-grid">
+            <button class="primary" onclick="fire('sign_up', {plan:'pro'})">sign_up — pro</button>
+            <button class="primary" onclick="fire('sign_up', {plan:'starter'})">sign_up — starter</button>
+            <button class="green"  onclick="fire('add_to_cart', {product:'Analytics Pro', price:'49'})">add_to_cart</button>
+            <button class="green"  onclick="fire('purchase', {amount:'49', currency:'USD', plan:'pro'})">purchase</button>
+            <button class="amber"  onclick="fire('video_play', {title:'Product tour', duration:'3m20s'})">video_play</button>
+            <button class="amber"  onclick="fire('video_complete', {title:'Product tour'})">video_complete</button>
+            <button onclick="fire('newsletter_subscribe', {source:'footer'})">newsletter_subscribe</button>
+            <button onclick="fire('contact_form_submit', {subject:'pricing'})">contact_form_submit</button>
+            <button onclick="fire('feature_click', {feature:'dark_mode'})">feature_click</button>
+            <button onclick="fire('docs_search', {query:'getting started'})">docs_search</button>
+            <button class="rose"   onclick="fire('churn_survey', {reason:'too_expensive'})">churn_survey</button>
+            <button onclick="fire('demo_request', {company:'Acme', seats:'50'})">demo_request</button>
+          </div>
+        </div>
+
+        <!-- Batch: rapid pageviews -->
+        <div class="card">
+          <h2>Stress test</h2>
+          <div class="btn-grid">
+            <button onclick="rapidPageviews(5)">5 rapid pageviews</button>
+            <button onclick="rapidPageviews(20)">20 rapid pageviews</button>
+            <button onclick="rapidEvents(10)">10 random events</button>
+          </div>
+        </div>
+
+        <!-- New visitor -->
+        <div class="card">
+          <h2>Visitor</h2>
+          <div class="btn-grid">
+            <button class="primary" onclick="newVisitor()">New visitor</button>
+          </div>
+          <p style="margin-top:0.6rem;font-size:0.78rem;color:#6b7280">
+            Clears the stored visitor &amp; session IDs and reloads the page,
+            so the next pageview is counted as a brand-new visitor.
+          </p>
+        </div>
+
+        </div><!-- /panel-demo -->
+
+      </div>
+
+      <!-- ── Sidebar: analytics or Cap log ───────── -->
+      <div class="card" style="position: sticky; top: 1.5rem">
+        <div id="sidebar-analytics">
+          <h2 style="display:flex;justify-content:space-between">
+            Event log
+            <button style="font-size:0.7rem;padding:0.2rem 0.5rem" onclick="clearLog()">clear</button>
+          </h2>
+          <div id="log">
+            <div class="log-entry" style="color:#9ca3af">Waiting for events…</div>
+          </div>
+        </div>
+        <div id="sidebar-login" hidden>
+          <h2 style="display:flex;justify-content:space-between">
+            Cap flow log
+            <button style="font-size:0.7rem;padding:0.2rem 0.5rem" onclick="clearLoginLog()">clear</button>
+          </h2>
+          <div id="login-log">
+            <div class="log-entry" style="color:#9ca3af">Waiting for cap events…</div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script src="login.js"></script>
+
+    <script>
+      // ── SPA navigation ──────────────────────────────
+      const PAGES = {
+        '/':        { title: '🏠 Home',    desc: 'The homepage.' },
+        '/about':   { title: '👋 About',   desc: 'Learn about the team.' },
+        '/blog':    { title: '📝 Blog',    desc: 'Latest posts and updates.' },
+        '/pricing': { title: '💰 Pricing', desc: 'Plans from Starter to Enterprise.' },
+        '/contact': { title: '✉️ Contact', desc: 'Get in touch.' },
+        '/login':   { title: '🔐 Login',   desc: 'Cap-protected sign-in demo.' },
+      }
+
+      document.querySelectorAll('.nav-link').forEach(function (a) {
+        a.addEventListener('click', function (e) {
+          e.preventDefault()
+          var path = this.dataset.path
+          var url = new URL(window.location.href)
+          url.pathname = path
+          history.pushState({}, '', url.toString())
+          updatePage(path)
+        })
+      })
+
+      function updatePage(path) {
+        var isLogin = path === '/login'
+        document.getElementById('panel-login').hidden = !isLogin
+        document.getElementById('panel-demo').hidden = isLogin
+        document.getElementById('sidebar-analytics').hidden = isLogin
+        document.getElementById('sidebar-login').hidden = !isLogin
+        document.getElementById('nav-status').hidden = !isLogin
+
+        document.querySelectorAll('.nav-link').forEach(function (a) {
+          a.classList.toggle('active', a.dataset.path === path)
+        })
+
+        if (!isLogin) {
+          var page = PAGES[path] || { title: path, desc: '' }
+          document.getElementById('page-title').textContent = page.title
+          document.getElementById('page-desc').textContent  = page.desc
+        }
+
+        if (isLogin && typeof initLoginDemo === 'function') initLoginDemo()
+      }
+
+      window.addEventListener('popstate', function () {
+        updatePage(window.location.pathname)
+      })
+
+      // Honor URL on full page load / refresh (server serves index.html for SPA paths)
+      updatePage(window.location.pathname)
+
+      // ── UTM helpers ─────────────────────────────────
+      function applyUTM(source, medium, campaign, content) {
+        var url = new URL(window.location.href)
+        url.searchParams.set('utm_source', source)
+        if (medium)   url.searchParams.set('utm_medium',   medium)
+        if (campaign) url.searchParams.set('utm_campaign', campaign)
+        if (content)  url.searchParams.set('utm_content',  content)
+        history.pushState({}, '', url.toString())
+        log('pageview', 'navigate: ' + url.pathname + url.search)
+      }
+
+      function clearUTM() {
+        var url = new URL(window.location.href)
+        ;['utm_source','utm_medium','utm_campaign','utm_content','utm_term'].forEach(function (k) {
+          url.searchParams.delete(k)
+        })
+        history.pushState({}, '', url.toString())
+        log('pageview', 'navigate (direct): ' + url.pathname)
+      }
+
+      // ── Custom event helpers ────────────────────────
+      function fire(name, props) {
+        if (typeof analytics !== 'undefined' && analytics.track) {
+          analytics.track(name, props || {})
+          log('custom', name + ' ' + JSON.stringify(props || {}))
+        } else {
+          log('error', 'analytics not ready — is the stack running?')
+        }
+      }
+
+      var RANDOM_EVENTS = [
+        ['sign_up',             {plan:'pro'}],
+        ['add_to_cart',         {product:'Analytics Pro', price:'49'}],
+        ['feature_click',       {feature:'export_csv'}],
+        ['video_play',          {title:'Intro video'}],
+        ['newsletter_subscribe',{source:'blog'}],
+        ['docs_search',         {query:'api keys'}],
+        ['contact_form_submit', {subject:'general'}],
+        ['demo_request',        {seats:'10'}],
+      ]
+
+      function rapidPageviews(n) {
+        var paths = Object.keys(PAGES).filter(function (p) { return p !== '/login' })
+        ;(function loop(i) {
+          if (i >= n) return
+          var path = paths[Math.floor(Math.random() * paths.length)]
+          history.pushState({}, '', path)
+          updatePage(path)
+          setTimeout(function () { loop(i + 1) }, 120)
+        })(0)
+      }
+
+      function rapidEvents(n) {
+        ;(function loop(i) {
+          if (i >= n) return
+          var ev = RANDOM_EVENTS[Math.floor(Math.random() * RANDOM_EVENTS.length)]
+          fire(ev[0], ev[1])
+          setTimeout(function () { loop(i + 1) }, 80)
+        })(0)
+      }
+
+      // ── New visitor ─────────────────────────────────
+      function newVisitor() {
+        // FingerprintJS visitor_id is storage-independent; clear session only.
+        // This simulates a fresh session, not a brand-new fingerprint identity.
+        try { sessionStorage.removeItem('_a_sid'); } catch (_) {}
+        location.reload();
+      }
+
+      // ── Event log ───────────────────────────────────
+      var logEl = document.getElementById('log')
+      var firstEntry = true
+
+      function log(type, msg) {
+        if (firstEntry) { logEl.innerHTML = ''; firstEntry = false }
+        var t = new Date().toTimeString().slice(0, 8)
+        var div = document.createElement('div')
+        div.className = 'log-entry ' + type
+        div.innerHTML = '<span class="log-time">' + t + '</span>' + escHtml(msg)
+        logEl.prepend(div)
+      }
+
+      function clearLog() { logEl.innerHTML = ''; firstEntry = true }
+
+      function escHtml(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      }
+
+      // Intercept analytics calls to also mirror into the log
+      // Works because analytics.track is set after DOMContentLoaded
+      var _origTrack
+      function hookAnalytics() {
+        if (typeof analytics !== 'undefined' && analytics.track && !analytics._hooked) {
+          _origTrack = analytics.track.bind(analytics)
+          analytics.track = function (name, props) {
+            _origTrack(name, props)
+            log('custom', name + ' ' + JSON.stringify(props || {}))
+          }
+          analytics._hooked = true
+          log('pageview', 'analytics ready — visitor ' + analytics.visitorId)
+        } else {
+          setTimeout(hookAnalytics, 200)
+        }
+      }
+
+      // Also log route changes via the history API (the snippet fires automatically)
+      var _origPushState = history.pushState.bind(history)
+      history.pushState = function (state, title, url) {
+        _origPushState(state, title, url)
+        if (url) log('pageview', 'pushState → ' + url)
+      }
+
+      hookAnalytics()
+    </script>
+  </body>
+</html>
